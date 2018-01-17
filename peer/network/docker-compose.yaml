@@ -1,0 +1,86 @@
+version: '2'
+
+services:
+  orderer.mypher.com:
+    container_name: orderer.mypher.com
+    image: hyperledger/fabric-orderer
+    environment:
+      - ORDERER_GENERAL_LOGLEVEL=debug
+      - ORDERER_GENERAL_LISTENADDRESS=orderer.mypher.com
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=mypher.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/etc/hyperledger/msp
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - GRPC_TRACE=all,
+      - GRPC_VERBOSITY=debug
+      - CORE_VM_DOCKER_ATTACHSTDOUT=true
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: orderer
+    volumes:
+      - ./keys/crypto-config/ordererOrganizations/mypher.com/orderers/orderer.mypher.com/msp:/etc/hyperledger/msp
+      - ./tx/mypher.block:/etc/hyperledger/fabric/mypher.block
+    ports:
+      - 7050:7050
+
+  peer0.org1.mypher.com:
+    container_name: peer0.org1.mypher.com
+    image: hyperledger/fabric-peer
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_PEER_ID=peer0.org1.mypher.com
+      - CORE_PEER_ADDRESS=peer0.org1.mypher.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.mypher.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_ENDORSER_ENABLED=true
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp
+      - GRPC_TRACE=all,
+      - GRPC_VERBOSITY=debug
+      - CORE_VM_DOCKER_ATTACHSTDOUT=true
+      - CORE_PEER_ADDRESSAUTODETECT=true
+    volumes:
+        - /var/run/:/host/var/run/
+        - ../chaincode/:/opt/gopath/src/github.com/mypher/peer/chaincode
+        - ./keys/crypto-config/peerOrganizations/org1.mypher.com/users/Admin@org1.mypher.com/msp:/etc/hyperledger/msp
+        - ../:/opt/gopath/src/github.com/mypher/peer
+    working_dir: /opt/gopath/src/github.com/mypher/peer
+    command: peer node start -o orderer.mypher.com:7050
+    #peer node start --peer-chaincodedev=true -o orderer.mypher.com:7050
+    ports:
+      - 7051:7051
+      - 7053:7053
+    depends_on:
+      - orderer.mypher.com
+
+  peer0.org2.mypher.com:
+    container_name: peer0.org2.mypher.com
+    image: hyperledger/fabric-peer
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_PEER_ID=peer0.org2.mypher.com
+      - CORE_PEER_ADDRESS=peer0.org2.mypher.com:7051
+      - CORE_PEER_ENDORSER_ENABLED=true
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.mypher.com:7051
+      - CORE_PEER_LOCALMSPID=Org2MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp
+      - GRPC_TRACE=all,
+      - GRPC_VERBOSITY=debug
+      - CORE_VM_DOCKER_ATTACHSTDOUT=true
+      - CORE_PEER_ADDRESSAUTODETECT=true
+    volumes:
+        - /var/run/:/host/var/run/
+        - ../chaincode/:/opt/gopath/src/github.com/mypher/chaincode
+        - ./keys/crypto-config/peerOrganizations/org2.mypher.com/users/Admin@org2.mypher.com/msp:/etc/hyperledger/msp
+        - ../:/opt/gopath/src/github.com/mypher/peer
+    working_dir: /opt/gopath/src/github.com/mypher/peer
+    command: peer node start -o orderer.mypher.com:7050
+    ports:
+      - 8051:7051
+      - 8053:7053
+    depends_on:
+      - orderer.mypher.com

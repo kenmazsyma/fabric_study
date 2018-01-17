@@ -1,0 +1,16 @@
+version: '2'
+
+services:
+  ca.mypher.org:
+    image: hyperledger/fabric-ca
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca.mypher.org
+    ports:
+      - "7054:7054"
+    volumes:
+      - ./ca_home/:/etc/hyperledger/fabric-ca-server
+      - ./keys/crypto-config/ca/:/etc/hyperledger/fabric-ca-server-config
+    working_dir: /etc/hyperledger/fabric-ca-server
+    command: bash -c './init.sh'
+    container_name: ca.mypher.org

@@ -1,0 +1,26 @@
+version: '2'
+
+services:
+  orderer.mypher.org:
+    container_name: orderer.mypher.org
+    image: hyperledger/fabric-orderer
+    environment:
+      - ORDERER_GENERAL_LOGLEVEL=debug
+      - ORDERER_GENERAL_LISTENADDRESS=orderer.mypher.org
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=mypher.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/etc/hyperledger/msp
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - GRPC_TRACE=all,
+      - GRPC_VERBOSITY=debug
+      - CORE_VM_DOCKER_ATTACHSTDOUT=true
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: orderer
+    volumes:
+      - ./keys/crypto-config/ordererOrganizations/mypher.org/orderers/orderer.mypher.org/msp:/etc/hyperledger/msp
+      - ./tx/mypher.block:/etc/hyperledger/fabric/mypher.block
+    ports:
+      - 7050:7050
+

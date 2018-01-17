@@ -1,0 +1,337 @@
+version: '2'
+
+services:
+
+  ## CA ##
+  
+  ca.mypher.org:
+    image: hyperledger/fabric-ca
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca.mypher.org
+    ports:
+      - "7054:7054"
+    volumes:
+      - ./ca_home/:/etc/hyperledger/fabric-ca-server
+      - ./keys/crypto-config/ca/:/etc/hyperledger/fabric-ca-server-config
+    working_dir: /etc/hyperledger/fabric-ca-server
+    command: bash -c './init.sh'
+    container_name: ca.mypher.org
+    networks:
+      default:
+       aliases:
+         - mypher
+
+  ## Zookeeper ##
+
+  zk0.mypher.org:
+    container_name: zk0.mypher.org
+    image: hyperledger/fabric-zookeeper
+    environment:
+      - ZOO_MY_ID=1
+      - ZOO_SERVERS=server.1=zk0.mypher.org:2888:3888 server.2=zk1.mypher.org:2888:3888 server.3=zk2.mypher.org:2888:3888
+    ports:
+      - 2181
+      - 2888
+      - 3888
+    networks:
+      default:
+       aliases:
+         - mypher
+
+  zk1.mypher.org:
+    container_name: zk1.mypher.org
+    image: hyperledger/fabric-zookeeper
+    environment:
+      - ZOO_MY_ID=2
+      - ZOO_SERVERS=server.1=zk0.mypher.org:2888:3888 server.2=zk1.mypher.org:2888:3888 server.3=zk2.mypher.org:2888:3888
+    ports:
+      - 2181
+      - 2888
+      - 3888
+    networks:
+      default:
+       aliases:
+         - mypher
+
+  zk2.mypher.org:
+    container_name: zk2.mypher.org
+    image: hyperledger/fabric-zookeeper
+    environment:
+      - ZOO_MY_ID=3
+      - ZOO_SERVERS=server.1=zk0.mypher.org:2888:3888 server.2=zk1.mypher.org:2888:3888 server.3=zk2.mypher.org:2888:3888
+    ports:
+      - 2181
+      - 2888
+      - 3888
+    networks:
+      default:
+       aliases:
+         - mypher
+
+  ## Kafka ##
+
+  kafka0.mypher.org:
+    image: hyperledger/fabric-kafka
+    container_name: kafka0.mypher.org
+    environment:
+      - KAFKA_LOG_RETENTION_MS=-1
+      - KAFKA_MESSAGE_MAX_BYTES=103809024
+      - KAFKA_REPLICA_FETCH_MAX_BYTES=103809024
+      - KAFKA_BROKER_ID=0
+      - KAFKA_ZOOKEEPER_CONNECT=zk0.mypher.org:2181,zk1.mypher.org:2181,zk2.mypher.org:2181
+      - KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE=false
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=3
+      - KAFKA_MIN_INSYNC_REPLICAS=2
+    ports:
+      - 9092
+    depends_on:
+      - zk0.mypher.org
+      - zk1.mypher.org
+      - zk2.mypher.org
+    links:
+      - zk0.mypher.org:zk0.mypher.org
+      - zk1.mypher.org:zk1.mypher.org
+      - zk2.mypher.org:zk2.mypher.org
+    networks:
+      default:
+       aliases:
+         - mypher
+
+  kafka1.mypher.org:
+    image: hyperledger/fabric-kafka
+    container_name: kafka1.mypher.org
+    environment:
+      - KAFKA_LOG_RETENTION_MS=-1
+      - KAFKA_MESSAGE_MAX_BYTES=103809024
+      - KAFKA_REPLICA_FETCH_MAX_BYTES=103809024
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zk0.mypher.org:2181,zk1.mypher.org:2181,zk2.mypher.org:2181
+      - KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE=false
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=3
+      - KAFKA_MIN_INSYNC_REPLICAS=2
+    ports:
+      - 9092
+    depends_on:
+      - zk0.mypher.org
+      - zk1.mypher.org
+      - zk2.mypher.org
+    links:
+      - zk0.mypher.org:zk0.mypher.org
+      - zk1.mypher.org:zk1.mypher.org
+      - zk2.mypher.org:zk2.mypher.org
+    networks:
+      default:
+       aliases:
+         - mypher
+
+  kafka2.mypher.org:
+    image: hyperledger/fabric-kafka
+    container_name: kafka2.mypher.org
+    environment:
+      - KAFKA_LOG_RETENTION_MS=-1
+      - KAFKA_MESSAGE_MAX_BYTES=103809024
+      - KAFKA_REPLICA_FETCH_MAX_BYTES=103809024
+      - KAFKA_BROKER_ID=2
+      - KAFKA_ZOOKEEPER_CONNECT=zk0.mypher.org:2181,zk1.mypher.org:2181,zk2.mypher.org:2181
+      - KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE=false
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=3
+      - KAFKA_MIN_INSYNC_REPLICAS=2
+    ports:
+      - 9092
+    depends_on:
+      - zk0.mypher.org
+      - zk1.mypher.org
+      - zk2.mypher.org
+    links:
+      - zk0.mypher.org:zk0.mypher.org
+      - zk1.mypher.org:zk1.mypher.org
+      - zk2.mypher.org:zk2.mypher.org
+    networks:
+      default:
+       aliases:
+         - mypher
+
+  kafka3.mypher.org:
+    image: hyperledger/fabric-kafka
+    container_name: kafka3.mypher.org
+    environment:
+      - KAFKA_LOG_RETENTION_MS=-1
+      - KAFKA_MESSAGE_MAX_BYTES=103809024
+      - KAFKA_REPLICA_FETCH_MAX_BYTES=103809024
+      - KAFKA_BROKER_ID=3
+      - KAFKA_ZOOKEEPER_CONNECT=zk0.mypher.org:2181,zk1.mypher.org:2181,zk2.mypher.org:2181
+      - KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE=false
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=3
+      - KAFKA_MIN_INSYNC_REPLICAS=2
+    ports:
+      - 9092
+    depends_on:
+      - zk0.mypher.org
+      - zk1.mypher.org
+      - zk2.mypher.org
+    links:
+      - zk0.mypher.org:zk0.mypher.org
+      - zk1.mypher.org:zk1.mypher.org
+      - zk2.mypher.org:zk2.mypher.org
+    networks:
+      default:
+       aliases:
+         - mypher
+
+  ## Orderer ##
+
+  orderer.org1.mypher.org:
+    container_name: orderer.org1.mypher.org
+    image: hyperledger/fabric-orderer
+    environment:
+      - ORDERER_GENERAL_LOGLEVEL=debug
+      - ORDERER_GENERAL_LISTENADDRESS=orderer.org1.mypher.org
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=mypher.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererOrg1MSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/etc/hyperledger/msp
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - GRPC_TRACE=all,
+      - GRPC_VERBOSITY=debug
+      - CORE_VM_DOCKER_ATTACHSTDOUT=true
+      - CONFIGTX_ORDERER_ORDERERTYPE=kafka
+      - CONFIGTX_ORDERER_KAFKA_BROKERS=[kafka0.mypher.org:9092,kafka1.mypher.org:9092,kafka2.mypher.org:9092,kafka3.mypher.org:9092]
+      - ORDERER_KAFKA_RETRY_SHORTINTERVAL=1s
+      - ORDERER_KAFKA_RETRY_SHORTTOTAL=30s
+      - ORDERER_KAFKA_VERBOSE=true
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: orderer
+    volumes:
+      - ./keys/orderer1:/etc/hyperledger/msp
+      - ./tx/mypher1.block:/etc/hyperledger/fabric/mypher.block
+    ports:
+      - 7050:7050
+    depends_on:
+      - kafka0.mypher.org
+      - kafka1.mypher.org
+      - kafka2.mypher.org
+      - kafka3.mypher.org
+    links:
+      - kafka0.mypher.org:kafka0.mypher.org
+      - kafka1.mypher.org:kafka1.mypher.org
+      - kafka2.mypher.org:kafka2.mypher.org
+      - kafka3.mypher.org:kafka3.mypher.org
+    networks:
+      default:
+       aliases:
+         - mypher
+
+  orderer.org2.mypher.org:
+    container_name: orderer.org2.mypher.org
+    image: hyperledger/fabric-orderer
+    environment:
+      - ORDERER_GENERAL_LOGLEVEL=debug
+      - ORDERER_GENERAL_LISTENADDRESS=orderer.org2.mypher.org
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=mypher.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererOrg2MSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/etc/hyperledger/msp
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - GRPC_TRACE=all,
+      - GRPC_VERBOSITY=debug
+      - CORE_VM_DOCKER_ATTACHSTDOUT=true
+      - CONFIGTX_ORDERER_ORDERERTYPE=kafka
+      - CONFIGTX_ORDERER_KAFKA_BROKERS=[kafka0.mypher.org:9092,kafka1.mypher.org:9092,kafka2.mypher.org:9092,kafka3.mypher.org:9092]
+      - ORDERER_KAFKA_RETRY_SHORTINTERVAL=1s
+      - ORDERER_KAFKA_RETRY_SHORTTOTAL=30s
+      - ORDERER_KAFKA_VERBOSE=true
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: orderer
+    volumes:
+      - ./keys/orderer2:/etc/hyperledger/msp
+      - ./tx/mypher2.block:/etc/hyperledger/fabric/mypher.block
+    ports:
+      - 8050:7050
+    depends_on:
+      - kafka0.mypher.org
+      - kafka1.mypher.org
+      - kafka2.mypher.org
+      - kafka3.mypher.org
+    links:
+      - kafka0.mypher.org:kafka0.mypher.org
+      - kafka1.mypher.org:kafka1.mypher.org
+      - kafka2.mypher.org:kafka2.mypher.org
+      - kafka3.mypher.org:kafka3.mypher.org
+    networks:
+      default:
+       aliases:
+         - mypher
+
+  ## Peer ##
+
+  peer0.org1.mypher.org:
+    container_name: peer0.org1.mypher.org
+    image: hyperledger/fabric-peer
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_PEER_ID=peer0.org1.mypher.org
+      - CORE_PEER_ADDRESS=peer0.org1.mypher.org:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.mypher.org:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_ENDORSER_ENABLED=true
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp
+      - GRPC_TRACE=all,
+      - GRPC_VERBOSITY=debug
+      - CORE_VM_DOCKER_ATTACHSTDOUT=true
+      - CORE_PEER_ADDRESSAUTODETECT=true
+    volumes:
+        - /var/run/:/host/var/run/
+        - ../chaincode/:/opt/gopath/src/github.com/mypher/peer/chaincode
+        - ./keys/peer1:/etc/hyperledger/msp
+        - ../:/opt/gopath/src/github.com/mypher/peer
+    working_dir: /opt/gopath/src/github.com/mypher/peer
+    command: peer node start -o orderer.org1.mypher.org:7050
+    #peer node start --peer-chaincodedev=true -o orderer.org1.mypher.org:7050
+    ports:
+      - 7051:7051
+      - 7053:7053
+    depends_on:
+      - orderer.org1.mypher.org
+    networks:
+      default:
+       aliases:
+         - mypher
+
+  peer0.org2.mypher.org:
+    container_name: peer0.org2.mypher.org
+    image: hyperledger/fabric-peer
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_PEER_ID=peer0.org2.mypher.org
+      - CORE_PEER_ADDRESS=peer0.org2.mypher.org:7051
+      - CORE_PEER_ENDORSER_ENABLED=true
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.mypher.org:7051
+      - CORE_PEER_LOCALMSPID=Org2MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp
+      - GRPC_TRACE=all,
+      - GRPC_VERBOSITY=debug
+      - CORE_VM_DOCKER_ATTACHSTDOUT=true
+      - CORE_PEER_ADDRESSAUTODETECT=true
+    volumes:
+        - /var/run/:/host/var/run/
+        - ../chaincode/:/opt/gopath/src/github.com/mypher/chaincode
+        - ./keys/peer2:/etc/hyperledger/msp
+        - ../:/opt/gopath/src/github.com/mypher/peer
+    working_dir: /opt/gopath/src/github.com/mypher/peer
+    command: peer node start -o orderer.org2.mypher.org:7050
+    ports:
+      - 8051:7051
+      - 8053:7053
+    depends_on:
+      - orderer.org2.mypher.org
+    networks:
+      default:
+       aliases:
+         - mypher

@@ -1,0 +1,88 @@
+#!/bin/bash
+
+# neccessary to genarate genesis block for being added org before executing
+
+ORG="Org3"
+BLOCK_PATH="tx_org3/mypher_org3.block"
+PROTOLATOR_API="http://localhost:7059/protolator"
+CONFIGTXLATOR_API="http://localhost:7059/configtxlator"
+OUTPATH="addtest"
+CONFIG_JSON="${OUTPATH}/config.json"
+CONFIG_PB="${OUTPATH}/config.pb"
+FOR_APPEND_JSON="${OUTPATH}/config_for_append.json"
+FOR_APPEND_PB="${OUTPATH}/config_for_append.pb"
+AFTER_APPEND_JSON="${OUTPATH}/config_after_append.json"
+AFTER_APPEND_PB="${OUTPATH}/config_after_append.pb"
+CONFIG_UPDATE_PB="${OUTPATH}/config_update.pb"
+CONFIG_UPDATE_ENVELOPE_JSON="${OUTPATH}/config_update_as_envelope.json"
+CONFIG_UPDATE_ENVELOPE_PB="${OUTPATH}/config_update_as_envelope.pb"
+CONFIG_NEW_PB="${OUTPATH}/config_block_new.pb"
+CONFIG_NEW_JSON="${OUTPATH}/config_block_new.json"
+
+CHANNEL="mypher"
+
+#export CORE_PEER_LOCALMSPID=Org1MSP
+#export CORE_PEER_MSPCONFIGPATH=$(pwd)/keys/peer1
+#export CORE_PEER_MSPCONFIGPATH=$(pwd)/keys/admin1
+export CORE_PEER_LOCALMSPID=Org3MSP
+export CORE_PEER_MSPCONFIGPATH=$(pwd)/keys/peer3
+
+ORDERER_URL="localhost:7050"
+ORDERER_CA_FILE="./keys/peer1/signcerts/org1.mypher.org-cert.pem"
+
+rm -R ${OUTPATH}
+mkdir ${OUTPATH}
+
+# fetch configuration block
+echo "FETCHING..."
+peer channel fetch config addtest/config_block.pb -o ${ORDERER_URL} -c ${CHANNEL} --cafile ${ORDERER_CA_FILE}
+echo "COMPLETED..."
+
+#prepare json for added org
+chk=`ps -e -o command | grep -e "^configtxlator"`
+if [ -z '${chk}' ]; then
+	configtxlator start &
+	sleep 1000
+fi
+
+# convert the file into human-readable file
+curl -X POST --data-binary @addtest/config_block.pb ${PROTOLATOR_API}/decode/common.Block  > addtest/config_block.json
+
+#extract section(Original)
+jq .data.data[0].payload.data.config addtest/config_block.json > ${CONFIG_JSON}
+curl -X POST --data-binary @${CONFIG_JSON} ${PROTOLATOR_API}/encode/common.Config > ${CONFIG_PB}
+
+#Org3
+curl -X POST --data-binary @${BLOCK_PATH} ${PROTOLATOR_API}/decode/common.Block | jq "{\"channel_group\":{\"groups\":{\"Application\":{\"groups\":{\"$ORG\": .data.data[0].payload.data.config.channel_group.groups.Application.groups.$ORG}}}}}" > ${FOR_APPEND_JSON}
+
+#123
+jq -s '.[0] * .[1]' ${CONFIG_JSON} ${FOR_APPEND_JSON} > ${AFTER_APPEND_JSON}
+
+curl -X POST --data-binary @${FOR_APPEND_JSON} ${PROTOLATOR_API}/encode/common.Config > ${FOR_APPEND_PB}
+curl -X POST --data-binary @${AFTER_APPEND_JSON} ${PROTOLATOR_API}/encode/common.Config > ${AFTER_APPEND_PB}
+
+curl -X POST -F original=@${CONFIG_PB} -F updated=@${AFTER_APPEND_PB} ${CONFIGTXLATOR_API}/compute/update-from-configs -F channel=mypher > ${CONFIG_UPDATE_PB}
+curl -X POST --data-binary @${CONFIG_UPDATE_PB} ${PROTOLATOR_API}/decode/common.ConfigUpdate > ${CONFIG_UPDATE_JSON}
+
+curl -X POST --data-binary @${CONFIG_UPDATE_PB} ${PROTOLATOR_API}/decode/common.ConfigUpdate | jq "{\"payload\":{\"header\":{\"channel_header\":{\"channel_id\":\"${CHANNEL}\",\"type\":2}},\"data\":{\"config_update\": .}}}" > ${CONFIG_UPDATE_ENVELOPE_JSON}
+
+curl -X POST --data-binary @${CONFIG_UPDATE_ENVELOPE_JSON} ${PROTOLATOR_API}/encode/common.Envelope > ${CONFIG_UPDATE_ENVELOPE_PB}
+
+#CORE_PEER_ROOTCERT_FILE=./keys/peer1/cacerts/ca.mypher.org-cert.pem
+#CORE_PEER_KEY_FILE=./keys/peer1/keystore/740119d80768576e9f3041bd300f82d1696f39207d507b58539eb6431068c314_sk
+#CORE_PEER_LOCALMSPID=Org1MSP
+#CORE_PEER_CERT_FILE=./keys/peer1/signcerts/org1.mypher.org-cert.pem
+#CORE_PEER_TLS_ENABLED=false
+#CORE_PEER_MSPCONFIGPATH=$(pwd)/keys/admin1
+#peer channel signconfigtx -f ${CONFIG_UPDATE_ENVELOPE_PB} -o ${ORDERER_URL} --cafile ${ORDERER_CA_FILE}
+
+#CORE_PEER_LOCALMSPID=Org2MSP
+#CORE_PEER_MSPCONFIGPATH=$(pwd)/keys/admin2
+#peer channel update -f ${CONFIG_UPDATE_ENVELOPE_PB} -o ${ORDERER_URL} -c ${CHANNEL} --cafile ${ORDERER_CA_FILE}
+
+#CORE_PEER_LOCALMSPID=Org1MSP
+#CORE_PEER_MSPCONFIGPATH=$(pwd)/keys/admin1
+#peer channel fetch config ${CONFIG_NEW_PB} -o ${ORDERER_URL} -c ${CHANNEL} --cafile ${ORDERER_CA_FILE}
+
+#curl -X POST --data-binary @${CONFIG_NEW_PB} ${PROTOLATOR_API}/decode/common.Block > ${CONFIG_NEW_JSON}
+

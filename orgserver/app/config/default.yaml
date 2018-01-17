@@ -1,0 +1,59 @@
+ChainEnv:
+    common:
+        chid : mypher
+    ca:
+       url: 'http://localhost:7054'
+       name: 'ca.mypher.org'
+
+    orderer:
+        url: 'grpc://localhost:7050'
+        mspid: 'OrdererOrg1MSP'
+        affiliation: 'org1'
+        user:
+            name: 'orderer1'
+            msppath: '../../../peer/network/research/keys/orderer1/'
+
+    peers:
+      - mspid: 'Org1MSP'
+        admin: 
+            name: 'admin1'
+            msppath: '../../../peer/network/research/keys/admin1/'
+        user: 
+            name: 'peer1'
+            msppath: '../../../peer/network/research/keys/peer1/'
+        rpc: 'grpc://localhost:7051'
+        evtrpc: 'grpc://localhost:7053'
+        host: 'peer0.org1.mypher.org'
+        cert: '../../../peer/network/research/keys/peer1/admincerts/'
+    
+      - mspid: 'Org2MSP'
+        admin: 
+            name: 'admin2'
+            msppath: '../../../peer/network/research/keys/admin2/'
+        user:  
+            name: 'peer2'
+            msppath: '../../../peer/network/research/keys/peer2/'
+        rpc: 'grpc://localhost:8051'
+        evtrpc: 'grpc://localhost:8053'
+        host: 'peer0.org2.mypher.org'
+        cert: '../../../peer/network/research/keys/peer2/admincerts/'
+DBEnv:
+    user: 'mypher'
+    pass: ''
+    host: 'localhost'
+    port: 5432
+    dbname: 'mypher'
+WebEnv:
+    url: '127.0.0.1'
+    port: 8800
+Logger:
+    appenders:
+        out:
+            type: 'console'
+            layout:
+                type: 'basic'
+    categories:
+        default:
+            appenders: 
+                - out
+            level: 'debug'

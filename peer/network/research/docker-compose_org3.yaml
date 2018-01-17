@@ -1,0 +1,83 @@
+version: '2'
+
+services:
+
+  ## Orderer ##
+
+  orderer.org3.mypher.org:
+    container_name: orderer.org3.mypher.org
+    image: hyperledger/fabric-orderer
+    environment:
+      - ORDERER_GENERAL_LOGLEVEL=debug
+      - ORDERER_GENERAL_LISTENADDRESS=orderer.org3.mypher.org
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=mypher.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererOrg3MSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/etc/hyperledger/msp
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - GRPC_TRACE=all,
+      - GRPC_VERBOSITY=debug
+      - CORE_VM_DOCKER_ATTACHSTDOUT=true
+      - CONFIGTX_ORDERER_ORDERERTYPE=kafka
+      - CONFIGTX_ORDERER_KAFKA_BROKERS=[kafka0.mypher.org:9092,kafka1.mypher.org:9092,kafka2.mypher.org:9092,kafka3.mypher.org:9092]
+      - ORDERER_KAFKA_RETRY_SHORTINTERVAL=1s
+      - ORDERER_KAFKA_RETRY_SHORTTOTAL=30s
+      - ORDERER_KAFKA_VERBOSE=true
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: orderer
+    volumes:
+      - ./keys/orderer3:/etc/hyperledger/msp
+      - ./tx/mypher3.block:/etc/hyperledger/fabric/mypher.block
+    ports:
+      - 8090:7050
+      #depends_on:
+      #- kafka0.mypher.org
+      #- kafka1.mypher.org
+      #- kafka2.mypher.org
+      #- kafka3.mypher.org
+      #links:
+      #- kafka0.mypher.org:kafka0.mypher.org
+      #- kafka1.mypher.org:kafka1.mypher.org
+      #- kafka2.mypher.org:kafka2.mypher.org
+      #- kafka3.mypher.org:kafka3.mypher.org
+    networks:
+      default:
+       aliases:
+         - mypher
+
+  ## Peer ##
+
+  peer0.org3.mypher.org:
+    container_name: peer0.org3.mypher.org
+    image: hyperledger/fabric-peer
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_PEER_ID=peer0.org3.mypher.org
+      - CORE_PEER_ADDRESS=peer0.org3.mypher.org:7051
+      - CORE_PEER_ENDORSER_ENABLED=true
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org3.mypher.org:7051
+      - CORE_PEER_LOCALMSPID=Org3MSP
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp
+      - GRPC_TRACE=all,
+      - GRPC_VERBOSITY=debug
+      - CORE_VM_DOCKER_ATTACHSTDOUT=true
+      - CORE_PEER_ADDRESSAUTODETECT=true
+    volumes:
+        - /var/run/:/host/var/run/
+        - ../chaincode/:/opt/gopath/src/github.com/mypher/chaincode
+        - ./keys/peer3:/etc/hyperledger/msp
+        - ../:/opt/gopath/src/github.com/mypher/peer
+    working_dir: /opt/gopath/src/github.com/mypher/peer
+    command: peer node start -o orderer.org2.mypher.org:7050
+    ports:
+      - 8091:7051
+      - 8093:7053
+        #depends_on:
+        #- orderer.org3.mypher.org
+    networks:
+      default:
+       aliases:
+         - mypher
